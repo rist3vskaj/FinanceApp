@@ -1,16 +1,14 @@
 import Foundation
 
-struct Transaction {
+struct Transaction: Codable, Identifiable {
     let id: Int
-    let account: BankAccount
-    let category: Category
+    let accountId: Int
+    let categoryId: Int
     let amount: Decimal
     let transactionDate: Date
     let comment: String?
-    let createdAt: Date
-    var updatedAt: Date
     
-    
+    // You can still keep CodingKeys if you want backend-compatible naming
     enum CodingKeys: String, CodingKey {
         case id
         case accountId = "account_id"
