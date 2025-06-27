@@ -10,8 +10,27 @@ import SwiftUI
 @main
 struct FinanceAppApp: App {
     var body: some Scene {
+        
         WindowGroup {
-            ContentView()
+            
+            VStack {
+                MainTabView()
+            }
+            
         }
     }
+
+    
+   
+}
+
+
+#Preview {
+    
+    VStack {
+        MainTabView()
+    }
+ 
+   // TransactionListView(direction: .income)
+    
 }
