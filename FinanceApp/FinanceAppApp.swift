@@ -1,36 +1,36 @@
-//
-//  FinanceAppApp.swift
-//  FinanceApp
-//
-//  Created by MACBOOK PRO M1 on 12.6.25.
-//
-
 import SwiftUI
 
 @main
 struct FinanceAppApp: App {
+    // 1️⃣ Create your shared service
+    //    (make sure TransactionsService is ObservableObject,
+    //     or wrap it in one if it isn’t)
+    @StateObject private var store = TransactionsService()
+
+    // 2️⃣ (Optional) Customize the real UITabBar’s appearance:
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.white
+        appearance.shadowColor    = UIColor.gray.withAlphaComponent(0.3)
+        // If you want rounded corners at the top of the bar,
+        // you’d need a custom backgroundImage mask here.
+
+        UITabBar.appearance().standardAppearance    = appearance
+        UITabBar.appearance().scrollEdgeAppearance  = appearance
+    }
+
     var body: some Scene {
-        
         WindowGroup {
-            
-            VStack {
-                MainTabView()
-            }
-            
+            // 3️⃣ Inject it into your view hierarchy
+            MainTabView()
+                .environmentObject(store)
         }
     }
-
-    
-   
 }
 
-
 #Preview {
-    
-    VStack {
-        MainTabView()
-    }
- 
-   // TransactionListView(direction: .income)
-    
+    // Don’t forget the .environmentObject in previews too:
+    MainTabView()
+      .environmentObject(TransactionsService())
 }

@@ -31,7 +31,7 @@ struct MainTabView: View {
 
             // Счёт (stub)
             NavigationStack {
-                Text("Счёт")
+                MyBankAccountView()
             }
             .tabItem {
                 Image("schet")
