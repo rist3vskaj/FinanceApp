@@ -6,19 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXContainerItemProxy section */
-		EF600B612DFC8842005E6DE0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EF600AC22DFB3D6F005E6DE0 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EF600AC92DFB3D6F005E6DE0;
-			remoteInfo = FinanceApp;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinanceApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -27,22 +16,10 @@
 			path = FinanceApp;
 			sourceTree = "<group>";
 		};
-		EF600B5E2DFC8842005E6DE0 /* FinanceAppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FinanceAppTests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		EF600AC72DFB3D6F005E6DE0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		EF600B5A2DFC8842005E6DE0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -56,7 +33,6 @@
 			isa = PBXGroup;
 			children = (
 				EF600ACC2DFB3D6F005E6DE0 /* FinanceApp */,
-				EF600B5E2DFC8842005E6DE0 /* FinanceAppTests */,
 				EF600ACB2DFB3D6F005E6DE0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,7 +41,6 @@
 			isa = PBXGroup;
 			children = (
 				EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */,
-				EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,29 +70,6 @@
 			productReference = EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		EF600B5C2DFC8842005E6DE0 /* FinanceAppTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = EF600B632DFC8842005E6DE0 /* Build configuration list for PBXNativeTarget "FinanceAppTests" */;
-			buildPhases = (
-				EF600B592DFC8842005E6DE0 /* Sources */,
-				EF600B5A2DFC8842005E6DE0 /* Frameworks */,
-				EF600B5B2DFC8842005E6DE0 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				EF600B622DFC8842005E6DE0 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				EF600B5E2DFC8842005E6DE0 /* FinanceAppTests */,
-			);
-			name = FinanceAppTests;
-			packageProductDependencies = (
-			);
-			productName = FinanceAppTests;
-			productReference = EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -130,10 +82,6 @@
 				TargetAttributes = {
 					EF600AC92DFB3D6F005E6DE0 = {
 						CreatedOnToolsVersion = 16.2;
-					};
-					EF600B5C2DFC8842005E6DE0 = {
-						CreatedOnToolsVersion = 16.2;
-						TestTargetID = EF600AC92DFB3D6F005E6DE0;
 					};
 				};
 			};
@@ -152,20 +100,12 @@
 			projectRoot = "";
 			targets = (
 				EF600AC92DFB3D6F005E6DE0 /* FinanceApp */,
-				EF600B5C2DFC8842005E6DE0 /* FinanceAppTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		EF600AC82DFB3D6F005E6DE0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		EF600B5B2DFC8842005E6DE0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -182,22 +122,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		EF600B592DFC8842005E6DE0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		EF600B622DFC8842005E6DE0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EF600AC92DFB3D6F005E6DE0 /* FinanceApp */;
-			targetProxy = EF600B612DFC8842005E6DE0 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		EF600AD62DFB3D71005E6DE0 /* Debug */ = {
@@ -375,40 +300,6 @@
 			};
 			name = Release;
 		};
-		EF600B642DFC8842005E6DE0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = jgj.FinanceAppTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FinanceApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FinanceApp";
-			};
-			name = Debug;
-		};
-		EF600B652DFC8842005E6DE0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = jgj.FinanceAppTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FinanceApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FinanceApp";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -426,15 +317,6 @@
 			buildConfigurations = (
 				EF600AD92DFB3D71005E6DE0 /* Debug */,
 				EF600ADA2DFB3D71005E6DE0 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		EF600B632DFC8842005E6DE0 /* Build configuration list for PBXNativeTarget "FinanceAppTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				EF600B642DFC8842005E6DE0 /* Debug */,
-				EF600B652DFC8842005E6DE0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
