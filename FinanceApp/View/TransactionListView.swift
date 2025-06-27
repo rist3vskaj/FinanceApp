@@ -13,10 +13,31 @@ struct TransactionListView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 // MARK: — Title
-                Text(direction == .income ? "Доходы сегодня" : "Расходы сегодня")
-                    .font(.largeTitle).bold()
-                    .padding(.horizontal)
-                    .padding(.bottom, 28)
+                HStack {
+                    Text(direction == .income ? "Доходы сегодня" : "Расходы сегодня")
+                        .font(.largeTitle).bold()
+                        .padding(.horizontal)
+                        .padding(.bottom, 28)
+                    Spacer()
+                           
+                           NavigationLink {
+                               HistoryView(direction: direction)
+                           } label: {
+                               Image(systemName: "clock")
+                                   .font(.system(size: 20, weight: .medium))
+                                   .padding(8)
+                                   .foregroundColor(.purple)
+                                   .padding(.top, -50)
+                                  
+                           }                           .buttonStyle(.plain)
+                       
+                       
+                       
+                }  .padding(.horizontal)
+                    
+           
+
+               
 
                 // MARK: — Total card
                 HStack {
@@ -99,7 +120,8 @@ struct TransactionListView: View {
 
 
 #Preview{
-  //  MainTabView()
-    
-    TransactionListView (direction: .outcome)
+    NavigationStack {
+        TransactionListView(direction: .outcome)
+      }.tint(.purple)
+      
 }
