@@ -8,8 +8,9 @@ struct MyBankAccountView: View {
     @State private var isBalanceHidden = false
     @State private var showTintDialog = false
        @State private var showAccentDialog = false
+    @State var spoilerIsOn = true
        
-       //Initializer
+      
        init(){
            UIView.appearance(whenContainedInInstancesOf: [UIAlertController.self]).tintColor = UIColor(.purple)
        }
@@ -43,6 +44,7 @@ struct MyBankAccountView: View {
                     // Balance row wrapped in spoiler
                     Spoiler(isHidden: $isBalanceHidden) {
                         HStack {
+                            Text("💰")
                             Text("Баланс")
                                 .font(.headline)
                             Spacer()
@@ -53,8 +55,7 @@ struct MyBankAccountView: View {
                                   .multilineTextAlignment(.trailing)
                                   .font(.headline)
                                   .frame(width: 120)
-                                  // 1) Any time the text changes (typing, system paste, drag-drop, etc.),
-                                  //    we strip out everything except digits and at most one “.”
+                               
                                   .onChange(of: balanceText) { newValue in
                                     var filtered = ""
                                     var dotSeen = false
@@ -70,8 +71,7 @@ struct MyBankAccountView: View {
                                       balanceText = filtered
                                     }
                                   }
-                                  // 2) We also add a “Paste” menu item so the user can manually paste
-                                  //    (and it will immediately be re-filtered by the onChange above).
+                                  
                                   .contextMenu {
                                     Button("Paste") {
                                       balanceText = UIPasteboard.general.string ?? ""
@@ -85,10 +85,11 @@ struct MyBankAccountView: View {
                                   ?? "0 ₽"
                                 )
                                 .font(.headline)
+                                .spoiler(isOn: $isBalanceHidden)
                             }
                         }
                         .padding()
-                        .background(Color.white)
+                        .background(Color("MainColor"))
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
@@ -109,7 +110,7 @@ struct MyBankAccountView: View {
                             .foregroundColor(isEditing ? .purple : .primary)
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(Color("MainColor").opacity(0.3))
                     .cornerRadius(12)
                     .padding(.horizontal)
                     .onTapGesture {
@@ -160,9 +161,7 @@ struct MyBankAccountView: View {
         }
     }
 }
-
-
-                    struct MyBankAccountView_Previews: PreviewProvider {
+          struct MyBankAccountView_Previews: PreviewProvider {
                       static var previews: some View {
                         MyBankAccountView()
                       }

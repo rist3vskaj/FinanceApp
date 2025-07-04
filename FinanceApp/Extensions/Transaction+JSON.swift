@@ -1,7 +1,7 @@
 import Foundation
 
 extension Transaction {
-   
+    
     var jsonObject: Any {
         var dict: [String: Any] = [:]
         dict["id"] = id
@@ -16,13 +16,13 @@ extension Transaction {
         dict["updatedAt"] = ISO8601DateFormatter().string(from: updatedAt)
         return dict
     }
-
-   
+    
+    
     static func parse(jsonObject: Any) -> Transaction? {
         guard let dict = jsonObject as? [String: Any] else {
             return nil
         }
-
+        
         guard
             let id = dict["id"] as? Int,
             let accountId = dict["accountId"] as? Int,
@@ -37,36 +37,37 @@ extension Transaction {
         else {
             return nil
         }
-
+        
         let comment = dict["comment"] as? String
-
-      
-        let mockAccount = BankAccount(
-            id: accountId,
-            userId: 0,
-            name: "Unknown",
-            balance: 0,
-            currency: "USD",
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
-
-        let mockCategory = Category(
-            id: categoryId,
-            name: "Unknown",
-            isIncome: false,
-            emoji: "❓"
-        )
-
-        return Transaction(
-            id: id,
-            account: mockAccount,
-            category: mockCategory,
-            amount: amountValue.decimalValue,
-            transactionDate: transactionDate,
-            comment: comment,
-            createdAt: createdAt,
-            updatedAt: updatedAt
-        )
-    }
+        
+        
+                let mockAccount = BankAccount(
+                    id: accountId,
+                    userId: 0,
+                    name: "Unknown",
+                    balance: 0,
+                    currency: "USD",
+                    createdAt: createdAt,
+                    updatedAt: updatedAt
+                )
+        
+                let mockCategory = Category(
+                    id: categoryId,
+                    name: "Unknown",
+                    isIncome: false,
+                    emoji: "❓"
+                )
+        
+                return Transaction(
+                    id: id,
+                    account: mockAccount,
+                    category: mockCategory,
+                    amount: amountValue.decimalValue,
+                    transactionDate: transactionDate,
+                    comment: comment,
+                    createdAt: createdAt,
+                    updatedAt: updatedAt
+                )
+            }
+    
 }

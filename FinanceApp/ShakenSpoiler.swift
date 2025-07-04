@@ -30,21 +30,16 @@ struct ShakeDetector: UIViewControllerRepresentable {
 
 // MARK: — 2) Spoiler
 struct Spoiler<Content: View>: View {
-  @Binding var isHidden: Bool
-  let content: () -> Content
-
-  var body: some View {
-    ZStack {
-      content()
-      if isHidden {
-          Color("MainColor")
-          .opacity(0.8)
-          .transition(.opacity)
-          .animation(.easeInOut(duration: 0.25), value: isHidden)
-          .cornerRadius(12)
-          .frame(width: 362)
-      }
+    @Binding var isHidden: Bool
+    let content: () -> Content
+    
+    var body: some View {
+        ZStack {
+            content()
+                
+        }
+        .clipped()
     }
-    .clipped()
-  }
 }
+        
+  
