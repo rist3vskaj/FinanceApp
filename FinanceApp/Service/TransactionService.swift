@@ -16,8 +16,8 @@ final class TransactionsService : ObservableObject {
        
         let salaryCat = Category(id: 1, name: "Зарплата", isIncome: true,  emoji: "💰")
         let coffeeCat = Category(id: 2, name: "Кофе",     isIncome: false, emoji: "☕️")
-        let gymCat = Category(id: 2, name: "Gym",     isIncome: false, emoji: "💰")
-        let cokeCat = Category(id: 2, name: "Coke Zero",     isIncome: false, emoji: "💰")
+        let gymCat = Category(id: 3, name: "Gym",     isIncome: false, emoji: "💰")
+        let cokeCat = Category(id: 4, name: "Coke Zero",     isIncome: false, emoji: "💰")
         
         let now = Date()
         return [

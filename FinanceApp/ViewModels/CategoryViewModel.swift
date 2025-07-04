@@ -3,22 +3,24 @@ import Foundation
 @MainActor
 final class CategoryViewModel: ObservableObject {
     @Published var categories: [Category] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+    @Published var searchText: String = ""
+
+    var filteredCategories: [Category] {
+        guard !searchText.isEmpty else { return categories }
+        
+        return categories.filter {
+            $0.name.fuzzyMatches(searchText)
+        }
+    }
 
     private let service = CategoriesService()
 
     func fetchCategories() async {
-        isLoading = true
-        errorMessage = nil
-
         do {
             categories = try await service.getAllCategories()
         } catch {
-            errorMessage = error.localizedDescription
+            print("Error loading categories:", error)
         }
-
-        isLoading = false
     }
 }
 
