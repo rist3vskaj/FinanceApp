@@ -2,32 +2,33 @@ import SwiftUI
 
 @main
 struct FinanceAppApp: App {
-  
-    @StateObject private var store = TransactionsService()
-
+    // 1) Keep your TransactionsService
+    @StateObject private var txStore = TransactionsService()
+    // 2) Add your one‐and‐only account service
+    @StateObject private var accountsStore = BankAccountsService()
 
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.white
+        appearance.backgroundColor = .white
         appearance.shadowColor    = UIColor.gray.withAlphaComponent(0.3)
-      
 
-        UITabBar.appearance().standardAppearance    = appearance
-        UITabBar.appearance().scrollEdgeAppearance  = appearance
+        UITabBar.appearance().standardAppearance   = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 
     var body: some Scene {
         WindowGroup {
-          
             MainTabView()
-                .environmentObject(store)
+              // 3) Inject *both* services
+              .environmentObject(txStore)
+              .environmentObject(accountsStore)
         }
     }
 }
 
 #Preview {
-
     MainTabView()
       .environmentObject(TransactionsService())
+      .environmentObject(BankAccountsService())
 }

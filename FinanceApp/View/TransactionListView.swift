@@ -2,126 +2,192 @@ import SwiftUI
 
 struct TransactionListView: View {
     let direction: Direction
-    @StateObject private var vm = TransactionViewModel()
- 
+
+    @EnvironmentObject private var txService: TransactionsService
+    @EnvironmentObject private var accountsService: BankAccountsService
+
+    @StateObject private var vm: TransactionViewModel
+    @State private var editingTx: Transaction?
+    @State private var showingCreate = false
+
+    init(direction: Direction) {
+        self.direction = direction
+        _vm = StateObject(
+            wrappedValue: TransactionViewModel(direction: direction,
+                                               service: TransactionsService())
+        )
+    }
 
     var body: some View {
+        NavigationStack {
+            content
+                .navigationBarHidden(true)
+                .fullScreenCover(item: $editingTx,
+                                onDismiss: reload  
+                ) { tx in
+                    // this is *only* the presentation closure—nothing else!
+                    TransactionFormView(mode: .edit(tx), direction: direction)
+                      .environmentObject(txService)
+                      .environmentObject(accountsService)
+                }
+                .fullScreenCover(isPresented: $showingCreate) {
+                  TransactionFormView(mode: .create, direction: direction)
+                    .environmentObject(txService)
+                    .environmentObject(accountsService)
+                }
+                .task {
+                    vm.service = txService
+                    await vm.loadTransactions()
+                }
+        }
+    }
+
+    // MARK: – Subviews
+
+    private var content: some View {
         ZStack(alignment: .bottomTrailing) {
-            // Full‐screen grey
-            Color(.systemGray6)
-                .ignoresSafeArea()
+            Color(.systemGray6).ignoresSafeArea()
+            VStack(spacing: 16) {
+                header
+                totalCard
+                transactionList
+                Spacer()
+            }
+            .padding(.top)
+            addButton
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 16) {
-                // MARK: — Title
-                HStack {
-                    Text(direction == .income ? "Доходы сегодня" : "Расходы сегодня")
-                        .font(.largeTitle).bold()
-                        .padding(.horizontal)
-                        .padding(.bottom, 28)
-                    Spacer()
-                           
-                           NavigationLink {
-                               HistoryView(direction: direction)
-                           } label: {
-                               Image(systemName: "clock")
-                                   .font(.system(size: 20, weight: .medium))
-                                   .padding(8)
-                                   .foregroundColor(.purple)
-                                   .padding(.top, -50)
-                                  
-                           }                           .buttonStyle(.plain)
-                       
-                       
-                       
-                }  .padding(.horizontal)
-                    
-           
+    private var header: some View {
+        HStack {
+            Text(direction == .income ? "Доходы сегодня" : "Расходы сегодня")
+                .font(.largeTitle).bold()
+            Spacer()
+            NavigationLink(destination: historyView) {
+                Image(systemName: "clock")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.purple)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
 
-               
+    private var historyView: some View {
+        HistoryView(direction: direction)
+            .environmentObject(txService)
+            .environmentObject(accountsService)
+    }
 
-                // MARK: — Total card
-                HStack {
-                    Text("Всего")
-                        .font(.headline)
-                    Spacer()
-                    Text(vm.totalAmount.formatted(.currency(code: "RUB")))
-                        .font(.headline)
+    private var totalCard: some View {
+        HStack {
+            Text("Всего").font(.headline)
+            Spacer()
+            Text(vm.totalAmount.formatted(.currency(code: "RUB")))
+                .font(.headline)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+
+    private var transactionList: some View {
+        VStack(spacing: 0) {
+            ForEach(vm.filteredTransactions) { tx in
+                Button { editingTx = tx } label: {
+                    transactionRow(tx)
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .padding(.horizontal)
-                .padding(.bottom)
+                .buttonStyle(.plain)
 
-                // MARK: — Operations list
-                VStack(spacing: 0) {
-                  ForEach(vm.filteredTransactions) { txn in
-                    HStack(spacing: 12) {
-                      ZStack {
-                        Circle()
-                              .fill(Color("MainColor").opacity(0.3))
-                          .frame(width: 30, height: 32)
-                        Text(String(txn.category.emoji))
-                      }
+                if tx.id != vm.filteredTransactions.last?.id {
+                    Divider()
+                        .padding(.leading, 56)
+                        .padding(.trailing, 16)
+                }
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
 
-                      VStack(alignment: .leading, spacing: 2) {
-                        Text(txn.category.name)
-                        if let c = txn.comment {
-                          Text(c)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        }
-                      }
-
-                      Spacer()
-
-                      Text(txn.amount.formatted(.currency(code: "RUB")))
-
-                      Image(systemName: "chevron.right")
+    private func transactionRow(_ tx: Transaction) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color("MainColor").opacity(0.3))
+                    .frame(width: 30, height: 30)
+                Text(String(tx.category.emoji))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(tx.category.name)
+                if let c = tx.comment {
+                    Text(c)
+                        .font(.caption)
                         .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal)
-
-                    // draw a divider *after* every row except the last
-                    if txn.id != vm.filteredTransactions.last?.id {
-                      Divider()
-                        // indent so it doesn’t run under the circle
-                        .padding(.leading, 20)
-                        .padding(.trailing, 20)
-                    }
-                  }
                 }
-                .background(Color.white)
-                .cornerRadius(12)
-                .padding(.horizontal)
-            } .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 40)
-            .task {
-                await vm.loadTransactions(for: direction)
             }
+            Spacer()
+            Text(tx.amount.formatted(.currency(code: "RUB")))
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal)
+    }
 
-            // MARK: — Floating + button
-            Button {
-                // add action here
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 66, height: 66)
-                    .background(Color("MainColor"))
-                    .clipShape(Circle())
-                    
-            }
-            .padding(24)
+    private var addButton: some View {
+        Button { showingCreate = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 66, height: 66)
+                .background(Color("MainColor"))
+                .clipShape(Circle())
+        }
+        .padding(24)
+    }
+
+    // MARK: – Forms
+
+    private func editForm(for tx: Transaction) -> some View {
+      TransactionFormView(
+        mode: .edit(tx),
+        direction: direction           // ← pass it here
+      )
+      .environmentObject(txService)
+      .environmentObject(accountsService)
+    }
+
+    private var createForm: some View {
+      TransactionFormView(
+        mode: .create,
+        direction: direction           // ← and here
+      )
+      .environmentObject(txService)
+      .environmentObject(accountsService)
+    }
+
+
+    // MARK: – Helpers
+
+    private func reload() {
+        Task {
+            await vm.loadTransactions()
         }
     }
 }
 
 
-#Preview{
+struct TransactionListView_Previews: PreviewProvider {
+  static var previews: some View {
     NavigationStack {
-        TransactionListView(direction: .outcome)
-      }.tint(.purple)
-      
+      TransactionListView(direction: .outcome)
+        .environmentObject(TransactionsService())
+        .environmentObject(BankAccountsService())
+    }
+  }
 }
+

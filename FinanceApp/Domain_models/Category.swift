@@ -5,7 +5,7 @@ enum Direction: String, Codable {
     case outcome
 }
 
-struct Category: Identifiable, Codable {
+struct Category: Identifiable, Codable, Hashable {
     let id: Int
     let name: String
     let isIncome: Bool

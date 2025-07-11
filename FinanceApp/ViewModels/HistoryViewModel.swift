@@ -25,7 +25,7 @@ final class HistoryViewModel: ObservableObject {
     @Published private(set) var error: String?
 
     private let service   = TransactionsService()
-    private let direction: Direction
+    let direction: Direction
 
     init(direction: Direction) {
         self.direction = direction

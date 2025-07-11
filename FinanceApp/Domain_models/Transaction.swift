@@ -1,6 +1,6 @@
 import Foundation
 
-struct Transaction : Identifiable {
+struct Transaction : Identifiable, Equatable {
     let id: Int
     let account: BankAccount
     let category: Category

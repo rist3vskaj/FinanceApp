@@ -39,9 +39,9 @@ struct MainTabView: View {
                 Text("Счёт")
             }
 
-            // Статьи (stub)
+            
             NavigationStack {
-                Text("Статьи")
+                ArticlesView()
             }
             .tabItem {
                 Image("statistics")
@@ -54,7 +54,7 @@ struct MainTabView: View {
                 Text("Настройки")
             }
             .tabItem {
-                Image("settings")
+                Image("settings 1")
                   .renderingMode(.template)
                 Text("Настройки")
             }
