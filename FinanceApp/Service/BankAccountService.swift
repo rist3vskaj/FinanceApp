@@ -1,25 +1,62 @@
 import Foundation
 
-/// A singleton service that holds exactly one account.
 final class BankAccountsService: ObservableObject {
-    @Published private var mockAccount = BankAccount(
-        id: 1,
-        userId: 1,
-        name: "Основной счёт",
-        balance: Decimal(string: "1000.00")!,
-        currency: "RUB",
-        createdAt: Date(),
-        updatedAt: Date()
-    )
-  
+    @Published private var account: BankAccount?
+    private let networkClient: NetworkClientProtocol
+    
+    init(networkClient: NetworkClientProtocol = NetworkClient()) {
+        self.networkClient = networkClient
+    }
+    
     /// SwiftUI views can read this via @EnvironmentObject
-    var account: BankAccount { mockAccount }
-
+    var envAccount: BankAccount? { account }
+    
     func getAccount() async throws -> BankAccount {
-        mockAccount
+        // INSERT YOUR JWT TOKEN HERE
+        let token = "KG8ToQeYtryu7MJ24PIhmdtc"
+        
+        let accounts: [BankAccount] = try await networkClient.request(
+            endpoint: "/accounts",
+            method: "GET",
+            token: token
+        )
+        
+        guard let firstAccount = accounts.first else {
+            throw NetworkError.notFound
+        }
+        
+        await MainActor.run {
+            self.account = firstAccount
+        }
+        
+        return firstAccount
     }
-
+    
     func updateAccount(_ account: BankAccount) async throws {
-        mockAccount = account
+        // INSERT YOUR JWT TOKEN HERE
+        let token = "KG8ToQeYtryu7MJ24PIhmdtc"
+        
+        let updateRequest = AccountUpdateRequest(
+            name: account.name,
+            balance: account.balance.description,
+            currency: account.currency
+        )
+        
+        let updatedAccount: BankAccount = try await networkClient.request(
+            endpoint: "/accounts/\(account.id)",
+            method: "PUT",
+            body: updateRequest,
+            token: token
+        )
+        
+        await MainActor.run {
+            self.account = updatedAccount
+        }
     }
+}
+
+struct AccountUpdateRequest: Encodable {
+    let name: String
+    let balance: String
+    let currency: String
 }

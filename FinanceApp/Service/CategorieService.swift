@@ -1,26 +1,45 @@
-final class CategoriesService {
-    private let transactionsService: TransactionsService
+import Foundation
 
-    init(transactionsService: TransactionsService = TransactionsService()) {
-        self.transactionsService = transactionsService
+final class CategoriesService: ObservableObject {
+    @Published private var categories: [Category] = []
+    private let networkClient: NetworkClientProtocol
+    
+    init(networkClient: NetworkClientProtocol = NetworkClient()) {
+        self.networkClient = networkClient
     }
     
-  
-
     func getAllCategories() async throws -> [Category] {
-        let transactions = try await transactionsService.getAllTransactions()
-
-        // Extract categories and remove duplicates (by ID)
-        let unique = Dictionary(
-            grouping: transactions.map(\.category),
-            by: \.id
-        ).compactMap { $0.value.first }
-
-        return unique
+        // INSERT YOUR JWT TOKEN HERE
+        let token = "KG8ToQeYtryu7MJ24PIhmdtc"
+        
+        let categories: [Category] = try await networkClient.request(
+            endpoint: "/categories",
+            method: "GET",
+            token: token
+        )
+        
+        await MainActor.run {
+            self.categories = categories
+        }
+        
+        return categories
     }
-
+    
     func getCategories(for direction: Direction) async throws -> [Category] {
-        let all = try await getAllCategories()
-        return all.filter { $0.direction == direction }
+        // INSERT YOUR JWT TOKEN HERE
+        let token = "KG8ToQeYtryu7MJ24PIhmdtc"
+        
+        let isIncome = direction == .income
+        let categories: [Category] = try await networkClient.request(
+            endpoint: "/categories/type/\(isIncome)",
+            method: "GET",
+            token: token
+        )
+        
+        await MainActor.run {
+            self.categories = categories
+        }
+        
+        return categories
     }
 }

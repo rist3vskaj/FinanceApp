@@ -6,10 +6,35 @@ enum TXFormMode: Equatable {
   case edit(Transaction)
 }
 
+struct CategoryPickerView: View {
+  @Binding var selection: Category
+  let categories: [Category]
+
+  var body: some View {
+    List(categories) { c in
+      HStack {
+        Text(c.name)
+        Spacer()
+        if c.id == selection.id {
+          Image(systemName: "checkmark")
+        }
+      }
+      .contentShape(Rectangle())
+      .onTapGesture {
+        selection = c
+      }
+    }
+    .navigationTitle("Статья")
+  }
+}
+
+
 struct TransactionFormView: View {
   @EnvironmentObject private var txService: TransactionsService
   @EnvironmentObject private var accountsService: BankAccountsService
   @Environment(\.dismiss)   private var dismiss
+    @EnvironmentObject private var categoriesService: CategoriesService
+
     
     @State private var newCategoryName: String = ""
     @State private var showValidationAlert = false
@@ -20,7 +45,7 @@ struct TransactionFormView: View {
 
   @State private var account     : BankAccount?
   @State private var categories  : [Category] = []
-  @State private var selectedCat : Category    = .init(id:0,name:"…",isIncome:false,emoji:" ")
+    @State private var selectedCat : Category    = .init(id:0,name:"…",isIncome:false,emoji:" ")
   @State private var amountText  : String      = ""
   @State private var date        : Date        = Date()
   @State private var comment     : String      = ""
@@ -47,46 +72,49 @@ struct TransactionFormView: View {
                 Section(" ") {
                     if case .edit = mode {
                         // —— EDIT MODE: tap to pick from your list
-                        NavigationLink {
-                            List(categories, id: \.id) { c in
-                                HStack {
-                                    Text(c.name)
-                                    Spacer()
-                                    if c.id == selectedCat.id {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedCat = c
-                                    dismiss()
-                                }
+                        HStack {
+                          Text("Статья")
+                          Spacer()
+                          NavigationLink {
+                            CategoryPickerView(selection: $selectedCat,
+                                               categories: categories)
+                          } label: {
+                            HStack(spacing: 4) {
+                              Text(selectedCat.name.isEmpty ? "—" : selectedCat.name)
+                                .foregroundColor(selectedCat.name.isEmpty ? .secondary : .primary)
+                              Image(systemName: "chevron.right")
                             }
-                            .navigationTitle("Статья")
-                        } label: {
-                            HStack {
-                                Text("Статья")
-                                Spacer()
-                                Text(selectedCat.name)
-                                    .foregroundColor(.primary)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                            }
+                          }
                         }
-                        
                     } else {
                         // —— CREATE MODE: free-form text field instead
-                        HStack {
-                            Text("Статья")
-                            Spacer()
-                            TextField("Введите статью", text: $newCategoryName)
-                                .multilineTextAlignment(.trailing)
+                        // и для create, и для edit — показываем NavigationLink:
+                        Section {
+                          NavigationLink {
+                            CategoryPickerView(selection: $selectedCat,
+                                               categories: categories)
+                          } label: {
+                            HStack {
+                              Text("Статья")
+                              Spacer()
+                              Text(selectedCat.name)
                                 .foregroundColor(.primary)
-                                .placeholder(when: newCategoryName.isEmpty) {
-                                    Text(" ")
-                                        .foregroundColor(.secondary)
-                                }
+                              Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                            }
+                          }
                         }
+//                        label: {
+//                          HStack {
+//                            Text("Статья")
+//                            Spacer()
+//                            Text(selectedCat.name.isEmpty ? "—" : selectedCat.name)
+//                              .foregroundColor(selectedCat.name.isEmpty ? .secondary : .primary)
+//                            Image(systemName: "chevron.right")
+//                              .foregroundColor(.gray)
+//                          }
+//                        }
+
                     }
                     
                     
@@ -200,16 +228,9 @@ struct TransactionFormView: View {
                                           // catValid means:
                                           //   - create ⇒ newCategoryName must not be blank
                                           //   - edit   ⇒ selectedCat must have a real id
-                                          let catValid: Bool = {
-                                              switch mode {
-                                              case .create:
-                                                  return !newCategoryName.trimmingCharacters(in: .whitespaces).isEmpty
-                                              case .edit:
-                                                  return selectedCat.id != 0
-                                              }
-                                          }()
+                                       
                                           
-                                          guard amtValid, catValid, commentValid, dateValid, timeValid else {
+                                          guard amtValid, dateValid, timeValid else {
                                               validationMessage = """
                                           Пожалуйста, заполните все поля
                                           
@@ -261,17 +282,59 @@ struct TransactionFormView: View {
 
                                     switch mode {
                                     case .create:
-                                      // a) clear out everything
-                                      amountText  = ""
-                                      comment     = ""
-                                      date        = Date()
-                                      categories  = []                   // ← no categories yet
-                                      selectedCat = Category(            // ← blank placeholder
-                                        id: 0,
-                                        name: "",
-                                        isIncome: false,
-                                        emoji: " "
-                                      )
+                                      // 1) fetch account, как было
+                                      amountText = ""
+                                      comment = ""
+                                      date = Date()
+
+                                      // 2) загрузить категории для выбранного направления (доход/расход)
+//                                      let allTx = (try? await txService.getAllTransactions()) ?? []
+                                  //    let wantIncome = (direction == .income)
+                                        
+                                        let allTx = (try? await txService.getAllTransactions()) ?? []
+
+                                           // 2) определяем, какие категории нам нужны (доходные или расходные)
+                                           let wantIncome: Bool = {
+                                               switch mode {
+                                               case .create:
+                                                   return direction == .income
+                                               case .edit(let tx):
+                                                   return tx.category.isIncome
+                                               }
+                                           }()
+
+                                           // 3) получаем уникальный список категорий нужного направления
+                                           let rawCategories = allTx
+                                             .map(\.category)
+                                             .filter { $0.isIncome == wantIncome }
+                                             .removingDuplicates()
+
+                                           // 4) для каждой категории считаем сумму её операций
+                                           categories = rawCategories.map { cat in
+                                             let sumForCat = allTx
+                                               .filter { $0.category.id == cat.id }
+                                               .map(\.amount)
+                                               .reduce(0, +)
+                                             return Category(
+                                               id: cat.id,
+                                               name: cat.name,
+                                               isIncome: cat.isIncome,
+                                               emoji: cat.emoji
+                                                // ← сюда передаём вычисленную сумму
+                                             )
+                                           }
+
+                                           // 5) в режиме create можно сразу выбрать первую категорию по умолчанию
+                                        if case .create = mode, selectedCat == nil, let first = categories.first {
+                                               selectedCat = first
+                                           }
+                                        // передайте direction в этот экран
+                                      categories = allTx
+                                        .map(\.category)
+                                        .filter { $0.isIncome == wantIncome }
+                                        .removingDuplicates()
+
+
 
                                     case .edit(let tx):
                                       // seed from the transaction
@@ -291,64 +354,39 @@ struct TransactionFormView: View {
                                   }
 
 
-                                  private func saveAndDismiss() async {
-                                      guard
-                                        let acct = account,
-                                        let amt  = Decimal(string: amountText),
-                                        !amountText.isEmpty
-                                      else {
-                                        return
-                                      }
+    private func saveAndDismiss() async {
+                                       guard
+                                         let acct = account,
+                                         let amt  = Decimal(string: amountText),
+                                         !amountText.isEmpty
+                                       else { return }
 
-                                      // 1) choose or generate a transaction ID
-                                      let newId: Int
-                                      if case .edit(let tx) = mode {
-                                        newId = tx.id
-                                      } else {
-                                        let all = (try? await txService.getAllTransactions()) ?? []
-                                        newId = (all.map(\.id).max() ?? 0) + 1
-                                      }
+                                       // попробуем получить все, если упадёт — возьмём пустой массив
+                                       let all = (try? await txService.getAllTransactions()) ?? []
+                                       let newId = (all.map(\.id).max() ?? 0) + 1
 
-                                      // 2) pick the category: typed‐in in create, or existing in edit
-                                      let categoryToUse: Category
-                                      switch mode {
-                                      case .create:
-                                        // give your new category its own ID (or reuse newId)
-                                        categoryToUse = Category(
-                                          id: newId,
-                                          name: newCategoryName,
-                                          isIncome: false,   // or flip based on UI
-                                          emoji: " "          // or however you want to populate it
-                                        )
-                                      case .edit:
-                                        categoryToUse = selectedCat
-                                      }
+                                       let tx = Transaction(
+                                         id: newId,
+                                         account: acct,
+                                         category: selectedCat,
+                                         amount: amt,
+                                         transactionDate: date,
+                                         comment: comment.isEmpty ? nil : comment,
+                                         createdAt: mode.transaction?.createdAt ?? Date(),
+                                         updatedAt: Date()
+                                       )
 
-                                      // 3) build the Transaction
-                                      let tx = Transaction(
-                                        id: newId,
-                                        account: acct,
-                                        category: categoryToUse,
-                                        amount: amt,
-                                        transactionDate: date,
-                                        comment: comment.isEmpty ? nil : comment,
-                                        createdAt: mode.transaction?.createdAt ?? Date(),
-                                        updatedAt: Date()
-                                      )
+                                       do {
+                                         try await txService.createTransaction(tx)
+                                         if let idx = categories.firstIndex(where: { $0.id == selectedCat.id }) {
+                                             try await categories                                         }
+                                         dismiss()
+                                       } catch {
+                                         print("Ошибка при создании или обновлении:", error)
+                                       }
+                                     }
 
-                                      // 4) save via your service
-                                      do {
-                                        switch mode {
-                                        case .create:
-                                          try await txService.createTransaction(tx)
-                                        case .edit:
-                                          try await txService.updateTransaction(tx)
-                                        }
-                                        dismiss()
-                                      } catch {
-                                        print("save failed:", error)
-                                      }
-                                  }
+
 
                               }
 
@@ -375,7 +413,8 @@ struct TransactionFormView_Previews: PreviewProvider {
       mode: .create,
       direction: .outcome     // ← choose .income or .outcome here
     )
-    .environmentObject(TransactionsService())
+    .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
     .environmentObject(BankAccountsService())
+      
   }
 }

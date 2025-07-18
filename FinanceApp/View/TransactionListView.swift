@@ -14,7 +14,7 @@ struct TransactionListView: View {
         self.direction = direction
         _vm = StateObject(
             wrappedValue: TransactionViewModel(direction: direction,
-                                               service: TransactionsService())
+                                               service: TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
         )
     }
 
@@ -185,7 +185,7 @@ struct TransactionListView_Previews: PreviewProvider {
   static var previews: some View {
     NavigationStack {
       TransactionListView(direction: .outcome)
-        .environmentObject(TransactionsService())
+        .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
         .environmentObject(BankAccountsService())
     }
   }
