@@ -59,7 +59,6 @@ class NetworkClient: NetworkClientProtocol {
         self.jsonDecoder = JSONDecoder()
         self.jsonEncoder = JSONEncoder()
         
-        // Configure date formatting for JSON decoding
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         self.jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
@@ -93,6 +92,9 @@ class NetworkClient: NetworkClientProtocol {
             }
         }
         
+        // 🔹 LOG запроса
+        logRequest(request)
+        
         return try await performRequest(request)
     }
     
@@ -110,11 +112,17 @@ class NetworkClient: NetworkClientProtocol {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // 🔹 LOG запроса
+        logRequest(request)
+        
         return try await performRequest(request)
     }
     
     private func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // 🔹 LOG ответа
+        logResponse(response, data: data)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.invalidResponse
@@ -131,7 +139,6 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.serializationError(error)
             }
         case 204:
-            // Handle 204 No Content by returning an empty response
             guard T.self == EmptyResponse.self else {
                 throw NetworkError.invalidResponse
             }
@@ -150,7 +157,36 @@ class NetworkClient: NetworkClientProtocol {
             throw NetworkError.httpError(statusCode: httpResponse.statusCode, message: nil)
         }
     }
+    
+    // MARK: - Logging helpers
+    
+    private func logRequest(_ request: URLRequest) {
+        print("📤 [REQUEST] \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
+        if let headers = request.allHTTPHeaderFields {
+            print("Headers: \(headers)")
+        }
+        if let body = request.httpBody,
+           let json = String(data: body, encoding: .utf8) {
+            print("Body: \(json)")
+        } else {
+            print("Body: <empty>")
+        }
+    }
+    
+    private func logResponse(_ response: URLResponse, data: Data) {
+        if let httpResponse = response as? HTTPURLResponse {
+            print("📥 [RESPONSE] \(httpResponse.statusCode) from \(httpResponse.url?.absoluteString ?? "")")
+            print("Headers: \(httpResponse.allHeaderFields)")
+            if let json = String(data: data, encoding: .utf8), !json.isEmpty {
+                print("Body: \(json)")
+            } else {
+                print("Body: <empty>")
+            }
+        } else {
+            print("📥 [RESPONSE] Non-HTTP response: \(response)")
+        }
+    }
 }
 
-// Empty response type for 204 No Content responses
+// Empty response type for 204 No Content
 struct EmptyResponse: Codable {}

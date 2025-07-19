@@ -1,420 +1,296 @@
 import SwiftUI
 
-/// Create vs Edit
 enum TXFormMode: Equatable {
-  case create
-  case edit(Transaction)
+    case create
+    case edit(Transaction)
 }
 
 struct CategoryPickerView: View {
-  @Binding var selection: Category
-  let categories: [Category]
-
-  var body: some View {
-    List(categories) { c in
-      HStack {
-        Text(c.name)
-        Spacer()
-        if c.id == selection.id {
-          Image(systemName: "checkmark")
+    @Binding var selection: Category
+    let categories: [Category]
+    
+    var body: some View {
+        List(categories.isEmpty ? [Category(id: 0, name: "No categories available", isIncome: false, emoji: "⚠️")] : categories) { c in
+            HStack {
+                Text(c.name)
+                Spacer()
+                if c.id == selection.id {
+                    Image(systemName: "checkmark")
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                selection = c
+            }
         }
-      }
-      .contentShape(Rectangle())
-      .onTapGesture {
-        selection = c
-      }
+        .navigationTitle("Статья")
     }
-    .navigationTitle("Статья")
-  }
 }
 
-
 struct TransactionFormView: View {
-  @EnvironmentObject private var txService: TransactionsService
-  @EnvironmentObject private var accountsService: BankAccountsService
-  @Environment(\.dismiss)   private var dismiss
+    @EnvironmentObject private var txService: TransactionsService
+    @EnvironmentObject private var accountsService: BankAccountsService
     @EnvironmentObject private var categoriesService: CategoriesService
-
+    @EnvironmentObject private var networkUIUtil: NetworkUIUtil
+    @Environment(\.dismiss) private var dismiss
     
-    @State private var newCategoryName: String = ""
+    let mode: TXFormMode
+    let direction: Direction
+    
+    @State private var account: BankAccount?
+    @State private var categories: [Category] = []
+    @State private var selectedCat: Category = Category(id: 0, name: "…", isIncome: false, emoji: " ")
+    @State private var previousCategoryId: Int? // Track the previously selected category ID
+    @State private var amountText: String = ""
+    @State private var date: Date = Date()
+    @State private var comment: String = ""
     @State private var showValidationAlert = false
     @State private var validationMessage = ""
-
-  let mode: TXFormMode
-    let direction: Direction
-
-  @State private var account     : BankAccount?
-  @State private var categories  : [Category] = []
-    @State private var selectedCat : Category    = .init(id:0,name:"…",isIncome:false,emoji:" ")
-  @State private var amountText  : String      = ""
-  @State private var date        : Date        = Date()
-  @State private var comment     : String      = ""
     
     private var decimalSeparator: String {
-      Locale.current.decimalSeparator ?? "."
+        Locale.current.decimalSeparator ?? "."
     }
+    
     var body: some View {
         NavigationStack {
-            Form {
-                // — Delete only in edit
-//                if case .edit(let tx) = mode {
-//                    Section {
-//                        Button("Удалить операцию", role: .destructive) {
-//                            Task {
-//                                try? await txService.deleteTransaction(id: tx.id)
-//                                dismiss()
-//                            }
-//                        }
-//                    }
-//                }
-                
-                // — Article picker
-                Section(" ") {
-                    if case .edit = mode {
-                        // —— EDIT MODE: tap to pick from your list
-                        HStack {
-                          Text("Статья")
-                          Spacer()
-                          NavigationLink {
-                            CategoryPickerView(selection: $selectedCat,
-                                               categories: categories)
-                          } label: {
-                            HStack(spacing: 4) {
-                              Text(selectedCat.name.isEmpty ? "—" : selectedCat.name)
-                                .foregroundColor(selectedCat.name.isEmpty ? .secondary : .primary)
-                              Image(systemName: "chevron.right")
-                            }
-                          }
-                        }
-                    } else {
-                        // —— CREATE MODE: free-form text field instead
-                        // и для create, и для edit — показываем NavigationLink:
-                        Section {
-                          NavigationLink {
-                            CategoryPickerView(selection: $selectedCat,
-                                               categories: categories)
-                          } label: {
+            ZStack {
+                Form {
+                    Section {
+                        NavigationLink {
+                            CategoryPickerView(selection: $selectedCat, categories: categories)
+                        } label: {
                             HStack {
-                              Text("Статья")
-                              Spacer()
-                              Text(selectedCat.name)
-                                .foregroundColor(.primary)
-                              Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
+                                Text("Статья")
+                                Spacer()
+                                Text(selectedCat.name.isEmpty ? "—" : selectedCat.name)
+                                    .foregroundColor(selectedCat.name.isEmpty ? .secondary : .primary)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray)
                             }
-                          }
                         }
-//                        label: {
-//                          HStack {
-//                            Text("Статья")
-//                            Spacer()
-//                            Text(selectedCat.name.isEmpty ? "—" : selectedCat.name)
-//                              .foregroundColor(selectedCat.name.isEmpty ? .secondary : .primary)
-//                            Image(systemName: "chevron.right")
-//                              .foregroundColor(.gray)
-//                          }
-//                        }
-
-                    }
-                    
-                    
-                    // — Amount
-                   
-                    HStack {
-                        Text("Сумма")
-                        TextField("0\(decimalSeparator)00", text: $amountText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .onChange(of: amountText) { new in
-                                // Allow only digits plus at most one decimal separator:
-                                let allowed = CharacterSet.decimalDigits
-                                    .union(CharacterSet(charactersIn: decimalSeparator))
-                                var filtered = new
-                                    .filter { char in
+                        
+                        HStack {
+                            Text("Сумма")
+                            TextField("0\(decimalSeparator)00", text: $amountText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .onChange(of: amountText) { new in
+                                    let allowed = CharacterSet.decimalDigits
+                                        .union(CharacterSet(charactersIn: decimalSeparator))
+                                    var filtered = new.filter { char in
                                         String(char).rangeOfCharacter(from: allowed) != nil
                                     }
-                                
-                                let parts = filtered.components(separatedBy: decimalSeparator)
-                                if parts.count > 2 {
-                                    // join first two again, then append the rest without separators
-                                    filtered = parts[0]
-                                    + decimalSeparator
-                                    + parts[1]
-                                    + parts.dropFirst(2).joined()
+                                    
+                                    let parts = filtered.components(separatedBy: decimalSeparator)
+                                    if parts.count > 2 {
+                                        filtered = parts[0] + decimalSeparator + parts[1] + parts.dropFirst(2).joined()
+                                    }
+                                    if filtered != new {
+                                        amountText = filtered
+                                    }
                                 }
-                                if filtered != new {
-                                    amountText = filtered
-                                }
+                        }
+                        
+                        HStack {
+                            Text("Дата")
+                            Spacer()
+                            DatePicker(
+                                "",
+                                selection: $date,
+                                in: ...Date(),
+                                displayedComponents: .date
+                            )
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                        }
+                        
+                        HStack {
+                            Text("Время")
+                            Spacer()
+                            DatePicker("", selection: $date, displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+                                .datePickerStyle(.compact)
+                        }
+                        
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $comment)
+                                .frame(minHeight: 80)
+                            if comment.isEmpty {
+                                Text("Комментарий")
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 8)
                             }
+                        }
                     }
                     
-                    
-                    // — Date & Time
-                    
-                    HStack {
-                        Text("Дата")
-                        Spacer ()
-                                            DatePicker(
-                                                "",
-                                                selection: $date,
-                                                in: ...Date(),    // never allow a date in the future
-                                                displayedComponents: .date
-                                            )
-                                            .labelsHidden()
-                                            .datePickerStyle(.compact)
+                    if case .edit(let tx) = mode {
+                        Section {
+                            Button("Удалить операцию", role: .destructive) {
+                                Task {
+                                    do {
+                                        try await networkUIUtil.perform {
+                                            try await txService.deleteTransaction(id: tx.id)
                                         }
-                                        HStack {
-                                            Text("Время")
-                                            Spacer ()
-                                            DatePicker("Время", selection: $date, displayedComponents: .hourAndMinute)
-                                                .labelsHidden()
-                                                .datePickerStyle(.compact)
-                                        }
-                                        
-                                        
-                                        // — Comment
-                                       
-                                            ZStack(alignment: .topLeading) {
-                                                TextEditor(text: $comment).frame(minHeight:80)
-                                                if comment.isEmpty {
-                                                    Text("Комментарий")
-                                                        .foregroundColor(.gray)
-                                                        .padding(.horizontal,4)
-                                                        .padding(.vertical,8)
-                                                
-                                            }
-                                        }
-                    
+                                        dismiss()
+                                    } catch {
+                                        print("Delete error: \(error)")
                                     }
-                if case .edit(let tx) = mode {
-                    Section {
-                        Button("Удалить операцию", role: .destructive) {
-                            Task {
-                                try? await txService.deleteTransaction(id: tx.id)
-                                dismiss()
+                                }
                             }
                         }
                     }
                 }
-
-                                }
-            .navigationTitle(
-              mode == .create
-                ? (direction == .income ? "Мои доходы" : "Мои расходы")
-                : "Редактировать операцию"
-            )
-                              .navigationBarTitleDisplayMode(.large)
-                              //.navigationBarTitleDisplayMode(.inline)
-                              .toolbar {
-                                  ToolbarItem(placement:.navigationBarLeading) {
-                                      Button("Отмена") { dismiss() }
-                                  }
-                                  ToolbarItem(placement: .navigationBarTrailing) {
-                                      Button(mode == .create ? "Создать" : "Сохранить") {
-                                          let amtValid = !amountText.isEmpty && Decimal(string: amountText) != nil
-                                          let commentValid = !comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                          let now = Date()
-                                          let dateValid = Calendar.current.startOfDay(for: date)
-                                          <= Calendar.current.startOfDay(for: now)
-                                          
-                                          // 5) if user chose today, time must not be ahead of now
-                                          let timeValid: Bool = {
-                                              if Calendar.current.isDate(date, inSameDayAs: now) {
-                                                  return date <= now
-                                              } else {
-                                                  return true
-                                              }
-                                          }()
-                                          // catValid means:
-                                          //   - create ⇒ newCategoryName must not be blank
-                                          //   - edit   ⇒ selectedCat must have a real id
-                                       
-                                          
-                                          guard amtValid, dateValid, timeValid else {
-                                              validationMessage = """
-                                          Пожалуйста, заполните все поля
-                                          
-                                          """
-                                              showValidationAlert = true
-                                              return
-                                          }
-                                          
-                                          Task { await saveAndDismiss() }
-                                      }
-                                      .disabled(account == nil)
-                                  }
-                              }
-                                    // This is the *only* navigationDestination you need:
-                                    .navigationDestination(for: Category.self) { _ in
-                                      List(categories, id:\.id) { c in
-                                        HStack {
-                                          Text(c.name)
-                                          Spacer()
-                                          if c.id == selectedCat.id {
-                                            Image(systemName:"checkmark")
-                                          }
-                                        }
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                          selectedCat = c
-                                          dismiss()
-                                        }
-                                      }
-                                      .navigationTitle("Статья")
-                                    }
-                                    .task { await loadInitialData() }
-                                    .alert(validationMessage, isPresented: $showValidationAlert) {
-                                        Button("Понял") { showValidationAlert = false }
-                                      }
-                                    .alert(isPresented: $showValidationAlert) {
-                                      Alert(
-                                        title: Text("Ошибка валидации"),
-                                        message: Text(validationMessage),
-                                        dismissButton: .default(Text("Понял"))
-                                      )
-                                    }
-        }.tint(.purple)
-                                }
-
-                                  private func loadInitialData() async {
-                                    // 1) load the single bank account
-                                    account = try? await accountsService.getAccount()
-
-                                    switch mode {
-                                    case .create:
-                                      // 1) fetch account, как было
-                                      amountText = ""
-                                      comment = ""
-                                      date = Date()
-
-                                      // 2) загрузить категории для выбранного направления (доход/расход)
-//                                      let allTx = (try? await txService.getAllTransactions()) ?? []
-                                  //    let wantIncome = (direction == .income)
-                                        
-                                        let allTx = (try? await txService.getAllTransactions()) ?? []
-
-                                           // 2) определяем, какие категории нам нужны (доходные или расходные)
-                                           let wantIncome: Bool = {
-                                               switch mode {
-                                               case .create:
-                                                   return direction == .income
-                                               case .edit(let tx):
-                                                   return tx.category.isIncome
-                                               }
-                                           }()
-
-                                           // 3) получаем уникальный список категорий нужного направления
-                                           let rawCategories = allTx
-                                             .map(\.category)
-                                             .filter { $0.isIncome == wantIncome }
-                                             .removingDuplicates()
-
-                                           // 4) для каждой категории считаем сумму её операций
-                                           categories = rawCategories.map { cat in
-                                             let sumForCat = allTx
-                                               .filter { $0.category.id == cat.id }
-                                               .map(\.amount)
-                                               .reduce(0, +)
-                                             return Category(
-                                               id: cat.id,
-                                               name: cat.name,
-                                               isIncome: cat.isIncome,
-                                               emoji: cat.emoji
-                                                // ← сюда передаём вычисленную сумму
-                                             )
-                                           }
-
-                                           // 5) в режиме create можно сразу выбрать первую категорию по умолчанию
-                                        if case .create = mode, selectedCat == nil, let first = categories.first {
-                                               selectedCat = first
-                                           }
-                                        // передайте direction в этот экран
-                                      categories = allTx
-                                        .map(\.category)
-                                        .filter { $0.isIncome == wantIncome }
-                                        .removingDuplicates()
-
-
-
-                                    case .edit(let tx):
-                                      // seed from the transaction
-                                      amountText  = tx.amount.description
-                                      comment     = tx.comment ?? ""
-                                      date        = tx.transactionDate
-                                      selectedCat = tx.category
-
-                                      // now build categories only in edit
-                                      let allTx = (try? await txService.getAllTransactions()) ?? []
-                                      let wantIncome = tx.category.isIncome
-                                      categories = allTx
-                                        .map(\.category)
-                                        .filter { $0.isIncome == wantIncome }
-                                        .removingDuplicates()
-                                    }
-                                  }
-
-
+                .navigationTitle(
+                    mode == .create
+                        ? (direction == .income ? "Мои доходы" : "Мои расходы")
+                        : "Редактировать операцию"
+                )
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Отмена") { dismiss() }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(mode == .create ? "Создать" : "Сохранить") {
+                            let amtValid = !amountText.isEmpty && Decimal(string: amountText) != nil
+                            let now = Date()
+                            let dateValid = Calendar.current.startOfDay(for: date) <= Calendar.current.startOfDay(for: now)
+                            let timeValid = Calendar.current.isDate(date, inSameDayAs: now) ? date <= now : true
+                            let catValid = selectedCat.id != 0
+                            
+                            guard amtValid, dateValid, timeValid, catValid else {
+                                validationMessage = "Пожалуйста, заполните все поля корректно"
+                                showValidationAlert = true
+                                return
+                            }
+                            
+                            Task { await saveAndDismiss() }
+                        }
+                        .disabled(account == nil || selectedCat.id == 0)
+                    }
+                }
+                .alert("Ошибка валидации", isPresented: $showValidationAlert) {
+                    Button("Понял") { showValidationAlert = false }
+                } message: {
+                    Text(validationMessage)
+                }
+                .alert("Ошибка", isPresented: Binding(
+                    get: { networkUIUtil.errorMessage != nil },
+                    set: { if !$0 { networkUIUtil.errorMessage = nil } }
+                )) {
+                    Button("OK") { }
+                } message: {
+                    Text(networkUIUtil.errorMessage ?? "Произошла неизвестная ошибка")
+                }
+                .task { await loadInitialData() }
+                .onAppear {
+                    print("TransactionFormView appeared with mode: \(mode), direction: \(direction)")
+                }
+                .onChange(of: selectedCat) { newValue in
+                    previousCategoryId = newValue.id != 0 ? newValue.id : nil // Update previous ID only for valid categories
+                }
+                
+                if networkUIUtil.isLoading {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(1.5)
+                }
+            }
+            .tint(.purple)
+        }
+    }
+    
+    private func loadInitialData() async {
+        do {
+            print("Starting loadInitialData for mode: \(mode)")
+            try await networkUIUtil.perform {
+                print("Fetching account...")
+                account = try await accountsService.getAccount()
+                print("Account fetched: \(String(describing: account))")
+                
+                print("Fetching categories...")
+                let allCategories = try await categoriesService.getAllCategories()
+                print("Raw categories count: \(allCategories.count)")
+                let wantIncome = (mode == .create) ? (direction == .income) : mode.transaction?.category.isIncome ?? false
+                categories = allCategories.filter { $0.isIncome == wantIncome }
+                print("Filtered categories count: \(categories.count)")
+                
+                if case .edit(let tx) = mode {
+                    amountText = tx.amount.description
+                    comment = tx.comment ?? ""
+                    date = tx.transactionDate
+                    selectedCat = tx.category
+                    print("Edit mode initialized with transaction ID: \(tx.id)")
+                } else if !categories.isEmpty {
+                    // Set selectedCat to previous selection if valid, otherwise use first category only if no previous selection
+                    if let prevId = previousCategoryId, let prevCat = categories.first(where: { $0.id == prevId }) {
+                        selectedCat = prevCat
+                    } else if previousCategoryId == nil {
+                        selectedCat = categories[0] // Use first category only if no previous selection
+                    }
+                    amountText = ""
+                    comment = ""
+                    date = Date()
+                    print("Create mode initialized with category: \(selectedCat.name)")
+                } else {
+                    selectedCat = Category(id: 0, name: "…", isIncome: false, emoji: " ")
+                    print("No categories available, using placeholder")
+                }
+            }
+        } catch {
+            print("LoadInitialData error: \(error)")
+        }
+    }
+    
     private func saveAndDismiss() async {
-                                       guard
-                                         let acct = account,
-                                         let amt  = Decimal(string: amountText),
-                                         !amountText.isEmpty
-                                       else { return }
+        guard let acct = account, let amt = Decimal(string: amountText) else {
+            print("Save failed: Invalid account or amount")
+            return
+        }
+        
+        let tx = Transaction(
+            id: mode.transaction?.id ?? 0,
+            account: acct,
+            category: selectedCat,
+            amount: amt,
+            transactionDate: date,
+            comment: comment.isEmpty ? nil : comment,
+            createdAt: mode.transaction?.createdAt ?? Date(),
+            updatedAt: Date()
+        )
+        
+        do {
+            try await networkUIUtil.perform {
+                print("Saving transaction with ID: \(tx.id)")
+                if case .edit = mode {
+                    try await txService.updateTransaction(tx)
+                    print("Transaction updated")
+                } else {
+                    try await txService.createTransaction(tx)
+                    print("Transaction created")
+                }
+            }
+            dismiss()
+        } catch {
+            print("Save error: \(error)")
+        }
+    }
+}
 
-                                       // попробуем получить все, если упадёт — возьмём пустой массив
-                                       let all = (try? await txService.getAllTransactions()) ?? []
-                                       let newId = (all.map(\.id).max() ?? 0) + 1
+private extension TXFormMode {
+    var transaction: Transaction? {
+        if case .edit(let t) = self { return t }
+        return nil
+    }
+}
 
-                                       let tx = Transaction(
-                                         id: newId,
-                                         account: acct,
-                                         category: selectedCat,
-                                         amount: amt,
-                                         transactionDate: date,
-                                         comment: comment.isEmpty ? nil : comment,
-                                         createdAt: mode.transaction?.createdAt ?? Date(),
-                                         updatedAt: Date()
-                                       )
-
-                                       do {
-                                         try await txService.createTransaction(tx)
-                                         if let idx = categories.firstIndex(where: { $0.id == selectedCat.id }) {
-                                             try await categories                                         }
-                                         dismiss()
-                                       } catch {
-                                         print("Ошибка при создании или обновлении:", error)
-                                       }
-                                     }
-
-
-
-                              }
-
-                              // Helpers
-                              private extension TXFormMode {
-                                var transaction: Transaction? {
-                                  if case .edit(let t) = self { return t }
-                                  return nil
-                                }
-                              }
-                              private extension Array where Element: Hashable {
-                                func removingDuplicates() -> [Element] {
-                                  var seen = Set<Element>()
-                                  return filter { seen.insert($0).inserted }
-                                }
-                              }
-
-
-
-                              // MARK: — Preview
 struct TransactionFormView_Previews: PreviewProvider {
-  static var previews: some View {
-    TransactionFormView(
-      mode: .create,
-      direction: .outcome     // ← choose .income or .outcome here
-    )
-    .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
-    .environmentObject(BankAccountsService())
-      
-  }
+    static var previews: some View {
+        TransactionFormView(mode: .create, direction: .outcome)
+            .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
+            .environmentObject(BankAccountsService())
+            .environmentObject(CategoriesService())
+            .environmentObject(NetworkUIUtil())
+    }
 }

@@ -21,15 +21,15 @@ final class BankAccountsService: ObservableObject {
             token: token
         )
         
-        guard let firstAccount = accounts.first else {
+        guard let accountWithID11 = accounts.first(where: { $0.userId == 111 }) else {
             throw NetworkError.notFound
         }
         
         await MainActor.run {
-            self.account = firstAccount
+            self.account = accountWithID11
         }
         
-        return firstAccount
+        return accountWithID11
     }
     
     func updateAccount(_ account: BankAccount) async throws {

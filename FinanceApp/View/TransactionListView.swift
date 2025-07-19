@@ -20,12 +20,19 @@ struct TransactionListView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        header
+                        totalCard
+                        transactionList
+                    }
+                    .padding(.top)
+                }
                 .navigationBarHidden(true)
                 .fullScreenCover(item: $editingTx,
-                                onDismiss: reload  
+                                onDismiss: reload
                 ) { tx in
-                    // this is *only* the presentation closure—nothing else!
                     TransactionFormView(mode: .edit(tx), direction: direction)
                       .environmentObject(txService)
                       .environmentObject(accountsService)
@@ -39,24 +46,15 @@ struct TransactionListView: View {
                     vm.service = txService
                     await vm.loadTransactions()
                 }
+                .overlay(alignment: .bottomTrailing) {
+                    addButton
+                        .padding(24)
+                }
+            }
         }
     }
 
     // MARK: – Subviews
-
-    private var content: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Color(.systemGray6).ignoresSafeArea()
-            VStack(spacing: 16) {
-                header
-                totalCard
-                transactionList
-                Spacer()
-            }
-            .padding(.top)
-            addButton
-        }
-    }
 
     private var header: some View {
         HStack {
@@ -72,6 +70,9 @@ struct TransactionListView: View {
         }
         .padding(.horizontal)
         .padding(.bottom, 8)
+        .background(Color(.systemGray6))
+        .frame(maxWidth: .infinity)
+        .zIndex(1) // Ensure header stays on top
     }
 
     private var historyView: some View {
@@ -147,7 +148,6 @@ struct TransactionListView: View {
                 .background(Color("MainColor"))
                 .clipShape(Circle())
         }
-        .padding(24)
     }
 
     // MARK: – Forms
@@ -155,7 +155,7 @@ struct TransactionListView: View {
     private func editForm(for tx: Transaction) -> some View {
       TransactionFormView(
         mode: .edit(tx),
-        direction: direction           // ← pass it here
+        direction: direction
       )
       .environmentObject(txService)
       .environmentObject(accountsService)
@@ -164,12 +164,11 @@ struct TransactionListView: View {
     private var createForm: some View {
       TransactionFormView(
         mode: .create,
-        direction: direction           // ← and here
+        direction: direction
       )
       .environmentObject(txService)
       .environmentObject(accountsService)
     }
-
 
     // MARK: – Helpers
 
@@ -180,7 +179,6 @@ struct TransactionListView: View {
     }
 }
 
-
 struct TransactionListView_Previews: PreviewProvider {
   static var previews: some View {
     NavigationStack {
@@ -190,4 +188,3 @@ struct TransactionListView_Previews: PreviewProvider {
     }
   }
 }
-

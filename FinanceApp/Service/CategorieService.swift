@@ -3,6 +3,7 @@ import Foundation
 final class CategoriesService: ObservableObject {
     @Published private var categories: [Category] = []
     private let networkClient: NetworkClientProtocol
+   
     
     init(networkClient: NetworkClientProtocol = NetworkClient()) {
         self.networkClient = networkClient
