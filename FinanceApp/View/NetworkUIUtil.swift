@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 class NetworkUIUtil: ObservableObject {
     @Published var isLoading = false
@@ -15,32 +16,38 @@ class NetworkUIUtil: ObservableObject {
     
     // UIKit: Show loading indicator
     func showLoading(in view: UIView) {
-        if activityIndicator.superview == nil {
-            view.addSubview(activityIndicator)
-            NSLayoutConstraint.activate([
-                activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-            ])
+        DispatchQueue.main.async {
+            if self.activityIndicator.superview == nil {
+                view.addSubview(self.activityIndicator)
+                NSLayoutConstraint.activate([
+                    self.activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                    self.activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+                ])
+            }
+            self.activityIndicator.startAnimating()
         }
-        activityIndicator.startAnimating()
     }
     
     // UIKit: Hide loading indicator
     func hideLoading() {
-        activityIndicator.stopAnimating()
-        activityIndicator.removeFromSuperview()
+        DispatchQueue.main.async {
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.removeFromSuperview()
+        }
     }
     
     // UIKit: Show error alert
     func showError(_ error: Error, in viewController: UIViewController) {
-        let message = (error as? NetworkError)?.errorDescription ?? error.localizedDescription
-        let alert = UIAlertController(
-            title: "Ошибка",
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        viewController.present(alert, animated: true)
+        DispatchQueue.main.async {
+            let message = (error as? NetworkError)?.errorDescription ?? error.localizedDescription
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: message,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            viewController.present(alert, animated: true)
+        }
     }
     
     // UIKit: Perform async operation
@@ -48,14 +55,20 @@ class NetworkUIUtil: ObservableObject {
         in viewController: UIViewController,
         operation: @escaping () async throws -> T
     ) async throws -> T {
-        showLoading(in: viewController.view)
+        DispatchQueue.main.async {
+            self.showLoading(in: viewController.view)
+        }
         do {
             let result = try await operation()
-            hideLoading()
+            DispatchQueue.main.async {
+                self.hideLoading()
+            }
             return result
         } catch {
-            hideLoading()
-            showError(error, in: viewController)
+            DispatchQueue.main.async {
+                self.hideLoading()
+                self.showError(error, in: viewController)
+            }
             throw error
         }
     }

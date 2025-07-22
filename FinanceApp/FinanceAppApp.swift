@@ -4,6 +4,8 @@ import SwiftUI
 struct FinanceAppApp: App {
     @StateObject private var txStore = TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc")
     @StateObject private var accountsStore = BankAccountsService()
+    @StateObject private var networkUIUtil = NetworkUIUtil()
+    @StateObject private var categoriesService = CategoriesService()
 
     init() {
         let appearance = UITabBarAppearance()
@@ -20,6 +22,9 @@ struct FinanceAppApp: App {
             MainTabView()
               .environmentObject(txStore)
               .environmentObject(accountsStore)
+              .environmentObject(networkUIUtil)
+              .environmentObject(categoriesService)
+            
         }
     }
 }

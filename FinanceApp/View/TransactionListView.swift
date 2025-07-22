@@ -5,6 +5,8 @@ struct TransactionListView: View {
 
     @EnvironmentObject private var txService: TransactionsService
     @EnvironmentObject private var accountsService: BankAccountsService
+    @EnvironmentObject private var networkUIUtil: NetworkUIUtil
+    @EnvironmentObject private var categoriesService: CategoriesService
 
     @StateObject private var vm: TransactionViewModel
     @State private var editingTx: Transaction?
@@ -36,11 +38,17 @@ struct TransactionListView: View {
                     TransactionFormView(mode: .edit(tx), direction: direction)
                       .environmentObject(txService)
                       .environmentObject(accountsService)
+                      .environmentObject(networkUIUtil)
+                      .environmentObject(categoriesService)
                 }
-                .fullScreenCover(isPresented: $showingCreate) {
+                .fullScreenCover(isPresented: $showingCreate,
+                                onDismiss: reload // Added onDismiss for create
+                ) {
                   TransactionFormView(mode: .create, direction: direction)
                     .environmentObject(txService)
                     .environmentObject(accountsService)
+                    .environmentObject(networkUIUtil)
+                    .environmentObject(categoriesService)
                 }
                 .task {
                     vm.service = txService
@@ -72,13 +80,15 @@ struct TransactionListView: View {
         .padding(.bottom, 8)
         .background(Color(.systemGray6))
         .frame(maxWidth: .infinity)
-        .zIndex(1) // Ensure header stays on top
+        .zIndex(1)
     }
 
     private var historyView: some View {
         HistoryView(direction: direction)
             .environmentObject(txService)
             .environmentObject(accountsService)
+            .environmentObject(networkUIUtil)
+            .environmentObject(categoriesService)
     }
 
     private var totalCard: some View {
@@ -159,6 +169,8 @@ struct TransactionListView: View {
       )
       .environmentObject(txService)
       .environmentObject(accountsService)
+      .environmentObject(networkUIUtil)
+      .environmentObject(categoriesService)
     }
 
     private var createForm: some View {
@@ -168,6 +180,8 @@ struct TransactionListView: View {
       )
       .environmentObject(txService)
       .environmentObject(accountsService)
+      .environmentObject(networkUIUtil)
+      .environmentObject(categoriesService)
     }
 
     // MARK: – Helpers
@@ -185,6 +199,8 @@ struct TransactionListView_Previews: PreviewProvider {
       TransactionListView(direction: .outcome)
         .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
         .environmentObject(BankAccountsService())
+        .environmentObject(NetworkUIUtil())
+        .environmentObject(CategoriesService())
     }
   }
 }
