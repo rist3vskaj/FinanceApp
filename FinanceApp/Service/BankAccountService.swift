@@ -15,21 +15,20 @@ final class BankAccountsService: ObservableObject {
         // INSERT YOUR JWT TOKEN HERE
         let token = "KG8ToQeYtryu7MJ24PIhmdtc"
         
+
         let accounts: [BankAccount] = try await networkClient.request(
             endpoint: "/accounts",
             method: "GET",
             token: token
         )
         
-        guard let accountWithID11 = accounts.first(where: { $0.userId == 111 }) else {
-            throw NetworkError.notFound
-        }
+        let account = accounts[0]
         
         await MainActor.run {
-            self.account = accountWithID11
+            self.account = account
         }
         
-        return accountWithID11
+        return account
     }
     
     func updateAccount(_ account: BankAccount) async throws {

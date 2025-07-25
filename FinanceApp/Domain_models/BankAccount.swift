@@ -18,6 +18,15 @@ struct BankAccount: Codable, Identifiable, Equatable {
         case createdAt
         case updatedAt
     }
+    init(id: Int, userId: Int, name: String, balance: Decimal, currency: String, createdAt: Date, updatedAt: Date) {
+            self.id = id
+            self.userId = userId
+            self.name = name
+            self.balance = balance
+            self.currency = currency
+            self.createdAt = createdAt
+            self.updatedAt = updatedAt
+        }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

@@ -285,12 +285,36 @@ private extension TXFormMode {
     }
 }
 
+
+
+import SwiftUI
+import SwiftData
+
 struct TransactionFormView_Previews: PreviewProvider {
     static var previews: some View {
-        TransactionFormView(mode: .create, direction: .outcome)
-            .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
-            .environmentObject(BankAccountsService())
-            .environmentObject(CategoriesService())
-            .environmentObject(NetworkUIUtil())
+        Group {
+            do {
+                let config = ModelConfiguration(isStoredInMemoryOnly: true)
+                let container = try ModelContainer(
+                    for: TransactionModel.self, BackupOperationModel.self,
+                    configurations: config
+                )
+                let txService = TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc", container: container)
+                return AnyView(
+                    NavigationStack {
+                        TransactionFormView(mode: .create, direction: .outcome)
+                            .environmentObject(txService)
+                            .environmentObject(BankAccountsService())
+                            .environmentObject(CategoriesService())
+                            .environmentObject(NetworkUIUtil())
+                            .modelContainer(container)
+                    }
+                )
+            } catch {
+                return AnyView(
+                    Text("Failed to create preview: \(error.localizedDescription)")
+                )
+            }
+        }
     }
 }

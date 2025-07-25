@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUICore
 
 struct CategorySummary: Identifiable {
   let id: Int
@@ -26,12 +27,15 @@ final class HistoryViewModel: ObservableObject {
         didSet { Task { await load() } }
     }
     
-    private let service = TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc")
-    private let bankAccountsService = BankAccountsService()
+    let service: TransactionsService
+    let bankAccountsService : BankAccountsService
+
     let direction: Direction
     
-    init(direction: Direction) {
+    init(direction: Direction, txService : TransactionsService, bankAccService : BankAccountsService) {
         self.direction = direction
+        self.service = txService
+        self.bankAccountsService = bankAccService
         
         let today = Date()
         let cal = Calendar.current

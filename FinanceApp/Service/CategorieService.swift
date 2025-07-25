@@ -43,4 +43,21 @@ final class CategoriesService: ObservableObject {
         
         return categories
     }
+    
+    func getCategory(id: Int) async throws -> Category {
+        // INSERT YOUR JWT TOKEN HERE
+        let token = "KG8ToQeYtryu7MJ24PIhmdtc"
+        
+        let categories: [Category] = try await networkClient.request(
+            endpoint: "/categories/",
+            method: "GET",
+            token: token
+        )
+        
+        await MainActor.run {
+            self.categories = categories
+        }
+        
+        return categories.first(where: { $0.id == id } ) ?? Category(id: id, name: "", isIncome: false, emoji: " ")
+    }
 }

@@ -1,11 +1,25 @@
-import UIKit
 import SwiftUI
+import SwiftData
 
-// MARK: — SwiftUI Preview Wrapper
 struct AnalysisViewControllerPreview: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> AnalysisViewController {
-        AnalysisViewController(direction: .outcome)
+    let direction: Direction
+    let txService: TransactionsService
+    let bankAccService: BankAccountsService
+    
+    init(direction: Direction, txService: TransactionsService, bankAccService: BankAccountsService) {
+        self.direction = direction
+        self.txService = txService
+        self.bankAccService = bankAccService
     }
+    
+    func makeUIViewController(context: Context) -> AnalysisViewController {
+        AnalysisViewController(
+            direction: direction,
+            txService: txService,
+            bankAccService: bankAccService
+        )
+    }
+    
     func updateUIViewController(_ uiViewController: AnalysisViewController, context: Context) {
         // no-op
     }
@@ -13,8 +27,22 @@ struct AnalysisViewControllerPreview: UIViewControllerRepresentable {
 
 struct AnalysisViewControllerPreview_Previews: PreviewProvider {
     static var previews: some View {
-        AnalysisViewControllerPreview()
-            .edgesIgnoringSafeArea(.all)
+        Group {
+            if let container = try? ModelContainer(
+                for: TransactionModel.self, BackupOperationModel.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            ) {
+                AnalysisViewControllerPreview(
+                    direction: .outcome,
+                    txService: TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc", container: container),
+                    bankAccService: BankAccountsService()
+                )
+                .edgesIgnoringSafeArea(.all)
+                .modelContainer(container)
+            } else {
+                Text("Failed to create preview: Unable to initialize ModelContainer")
+            }
+        }
     }
 }
 
@@ -64,8 +92,8 @@ class AnalysisViewController: UIViewController {
     private let networkUIUtil = NetworkUIUtil()
     
     // MARK: Init
-    init(direction: Direction) {
-        self.viewModel = HistoryViewModel(direction: direction)
+    init(direction: Direction, txService : TransactionsService, bankAccService : BankAccountsService) {
+        self.viewModel = HistoryViewModel(direction: direction, txService : txService, bankAccService : bankAccService)
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError() }

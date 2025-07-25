@@ -1,9 +1,8 @@
 import SwiftUI
-
 struct TransactionListView: View {
     let direction: Direction
+    let service: TransactionsService  // Add this property
 
-    @EnvironmentObject private var txService: TransactionsService
     @EnvironmentObject private var accountsService: BankAccountsService
     @EnvironmentObject private var networkUIUtil: NetworkUIUtil
     @EnvironmentObject private var categoriesService: CategoriesService
@@ -12,11 +11,11 @@ struct TransactionListView: View {
     @State private var editingTx: Transaction?
     @State private var showingCreate = false
 
-    init(direction: Direction) {
+    init(direction: Direction, service: TransactionsService) {
         self.direction = direction
+        self.service = service
         _vm = StateObject(
-            wrappedValue: TransactionViewModel(direction: direction,
-                                               service: TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
+            wrappedValue: TransactionViewModel(direction: direction, service: service)
         )
     }
 
@@ -32,26 +31,21 @@ struct TransactionListView: View {
                     .padding(.top)
                 }
                 .navigationBarHidden(true)
-                .fullScreenCover(item: $editingTx,
-                                onDismiss: reload
-                ) { tx in
+                .fullScreenCover(item: $editingTx, onDismiss: reload) { tx in
                     TransactionFormView(mode: .edit(tx), direction: direction)
-                      .environmentObject(txService)
-                      .environmentObject(accountsService)
-                      .environmentObject(networkUIUtil)
-                      .environmentObject(categoriesService)
+                        .environmentObject(service)  // Use the stored service
+                        .environmentObject(accountsService)
+                        .environmentObject(networkUIUtil)
+                        .environmentObject(categoriesService)
                 }
-                .fullScreenCover(isPresented: $showingCreate,
-                                onDismiss: reload // Added onDismiss for create
-                ) {
-                  TransactionFormView(mode: .create, direction: direction)
-                    .environmentObject(txService)
-                    .environmentObject(accountsService)
-                    .environmentObject(networkUIUtil)
-                    .environmentObject(categoriesService)
+                .fullScreenCover(isPresented: $showingCreate, onDismiss: reload) {
+                    TransactionFormView(mode: .create, direction: direction)
+                        .environmentObject(service)  // Use the stored service
+                        .environmentObject(accountsService)
+                        .environmentObject(networkUIUtil)
+                        .environmentObject(categoriesService)
                 }
                 .task {
-                    vm.service = txService
                     await vm.loadTransactions()
                 }
                 .overlay(alignment: .bottomTrailing) {
@@ -59,10 +53,13 @@ struct TransactionListView: View {
                         .padding(24)
                 }
             }
+            .onAppear {
+                Task { await vm.loadTransactions() }
+            }
         }
     }
 
-    // MARK: – Subviews
+    // MARK: – Subviews (unchanged except for historyView)
 
     private var header: some View {
         HStack {
@@ -84,8 +81,8 @@ struct TransactionListView: View {
     }
 
     private var historyView: some View {
-        HistoryView(direction: direction)
-            .environmentObject(txService)
+        HistoryView(direction: direction, txService: service, bankAccService: accountsService)
+            .environmentObject(service)  // Update to use service
             .environmentObject(accountsService)
             .environmentObject(networkUIUtil)
             .environmentObject(categoriesService)
@@ -160,30 +157,6 @@ struct TransactionListView: View {
         }
     }
 
-    // MARK: – Forms
-
-    private func editForm(for tx: Transaction) -> some View {
-      TransactionFormView(
-        mode: .edit(tx),
-        direction: direction
-      )
-      .environmentObject(txService)
-      .environmentObject(accountsService)
-      .environmentObject(networkUIUtil)
-      .environmentObject(categoriesService)
-    }
-
-    private var createForm: some View {
-      TransactionFormView(
-        mode: .create,
-        direction: direction
-      )
-      .environmentObject(txService)
-      .environmentObject(accountsService)
-      .environmentObject(networkUIUtil)
-      .environmentObject(categoriesService)
-    }
-
     // MARK: – Helpers
 
     private func reload() {
@@ -193,14 +166,24 @@ struct TransactionListView: View {
     }
 }
 
-struct TransactionListView_Previews: PreviewProvider {
-  static var previews: some View {
-    NavigationStack {
-      TransactionListView(direction: .outcome)
-        .environmentObject(TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc"))
-        .environmentObject(BankAccountsService())
-        .environmentObject(NetworkUIUtil())
-        .environmentObject(CategoriesService())
+
+import SwiftData
+
+#Preview {
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: TransactionModel.self, BackupOperationModel.self,
+            configurations: config
+        )
+        let txService = TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc", container: container)
+        return MainTabView()
+            .environmentObject(txService)
+            .environmentObject(BankAccountsService())
+            .environmentObject(CategoriesService())
+            .environmentObject(NetworkUIUtil())
+            .modelContainer(container)
+    } catch {
+        return Text("Failed to create preview: \(error.localizedDescription)")
     }
-  }
 }

@@ -1,18 +1,28 @@
+// TransactionsService.swift
 import Foundation
+import SwiftData
 
 final class TransactionsService: ObservableObject {
     private let networkClient: NetworkClientProtocol
     private let bankAccountsService: BankAccountsService
     private let token: String
-    
-    init(networkClient: NetworkClientProtocol = NetworkClient(), token: String) {
+    private let categoriesService: CategoriesService
+    private var currentTask: URLSessionTask?
+    private let storage: TransactionStorage
+    private let backup: TransactionBackup
+
+    init(networkClient: NetworkClientProtocol = NetworkClient(), token: String, container: ModelContainer) {
         self.networkClient = networkClient
         self.bankAccountsService = BankAccountsService(networkClient: networkClient)
         self.token = token
+        self.categoriesService = CategoriesService(networkClient: networkClient) // Assuming CategoriesService exists
+        self.storage = try! SwiftDataTransactionStorage(container: container ,accountsService: bankAccountsService, categoriesService: categoriesService)
+        self.backup = try! TransactionBackup(container: container)
     }
     
+    
+
     func getAllTransactions() async throws -> [Transaction] {
-        
         let responses: [TransactionResponse] = try await networkClient.request(
             endpoint: "/transactions",
             method: "GET",
@@ -43,7 +53,7 @@ final class TransactionsService: ObservableObject {
             )
         }
     }
-    
+
     func getTransactions(from start: Date, to end: Date) async throws -> [Transaction] {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -82,8 +92,9 @@ final class TransactionsService: ObservableObject {
             )
         }
     }
-    
+
     func createTransaction(_ transaction: Transaction) async throws {
+        try storage.createTransaction(transaction)
         let request = TransactionRequest(from: transaction)
         do {
             print("Sending transaction request: \(request)")
@@ -94,48 +105,49 @@ final class TransactionsService: ObservableObject {
                 token: token
             )
             print("Transaction created with ID: \(response.id)")
-            // Refresh account balance
+            try storage.updateTransaction(transaction) // Sync with server ID if needed
             _ = try await bankAccountsService.getAccount()
             print("Account balance refreshed")
         } catch {
-            if let networkError = error as? NetworkError {
-                switch networkError {
-                case .serverError:
-                                    print("Server error: HTTP ")
-                default:
-                    print("Network error: \(networkError.localizedDescription)")
-                }
-            } else if let urlError = error as? URLError {
-                print("URL error: \(urlError.code.rawValue) - \(urlError.localizedDescription)")
-            } else {
-                print("Unexpected error creating transaction: \(error)")
+            backup.addOperation(transaction, action: .create)
+            throw error
+        }
+    }
+
+    func updateTransaction(_ transaction: Transaction) async throws {
+        try storage.updateTransaction(transaction)
+        let request = TransactionRequest(from: transaction)
+        do {
+            let _: TransactionCreationResponse = try await networkClient.request(
+                endpoint: "/transactions/\(transaction.id)",
+                method: "PUT",
+                body: request,
+                token: token
+            )
+            _ = try await bankAccountsService.getAccount()
+        } catch {
+            backup.addOperation(transaction, action: .update)
+            throw error
+        }
+    }
+
+    func deleteTransaction(id: Int) async throws {
+        try storage.deleteTransaction(withId: id)
+        do {
+            let _: EmptyResponse = try await networkClient.request(
+                endpoint: "/transactions/\(id)",
+                method: "DELETE",
+                token: token
+            )
+            _ = try await bankAccountsService.getAccount()
+        } catch {
+            if let transaction = try await storage.getAllTransactions().first(where: { $0.id == id }) {
+                backup.addOperation(transaction, action: .delete)
             }
             throw error
         }
     }
-    
-    func updateTransaction(_ transaction: Transaction) async throws {
-        let request = TransactionRequest(from: transaction)
-        let _: TransactionCreationResponse = try await networkClient.request(
-            endpoint: "/transactions/\(transaction.id)",
-            method: "PUT",
-            body: request,
-            token: token
-        )
-        // Refresh account balance
-        _ = try await bankAccountsService.getAccount()
-    }
-    
-    func deleteTransaction(id: Int) async throws {
-        let _: EmptyResponse = try await networkClient.request(
-            endpoint: "/transactions/\(id)",
-            method: "DELETE",
-            token: token
-        )
-        // Refresh account balance
-        _ = try await bankAccountsService.getAccount()
-    }
-    
+
     private func fetchAccounts() async throws -> [BankAccount] {
         return try await networkClient.request(
             endpoint: "/accounts",
@@ -143,12 +155,32 @@ final class TransactionsService: ObservableObject {
             token: token
         )
     }
-    
+
     private func fetchCategories() async throws -> [Category] {
         return try await networkClient.request(
             endpoint: "/categories",
             method: "GET",
             token: token
         )
+    }
+
+    // Helper to sync backups
+    func syncBackups() async throws {
+        let unsynced = backup.getUnsyncedOperations()
+        for operation in unsynced {
+            do {
+                switch operation.action {
+                case .create:
+                    try await createTransaction(operation.transaction)
+                case .update:
+                    try await updateTransaction(operation.transaction)
+                case .delete:
+                    try await deleteTransaction(id: operation.transaction.id)
+                }
+                try backup.clearSyncedOperation(withId: operation.transaction.id)
+            } catch {
+                print("Failed to sync operation: \(error)")
+            }
+        }
     }
 }

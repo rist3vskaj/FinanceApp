@@ -161,8 +161,34 @@ struct MyBankAccountView: View {
         }
     }
 }
-          struct MyBankAccountView_Previews: PreviewProvider {
-                      static var previews: some View {
+import SwiftUI
+import SwiftData
+
+struct MyBankAccountView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            do {
+                let config = ModelConfiguration(isStoredInMemoryOnly: true)
+                let container = try ModelContainer(
+                    for: TransactionModel.self, BackupOperationModel.self,
+                    configurations: config
+                )
+                let txService = TransactionsService(token: "KG8ToQeYtryu7MJ24PIhmdtc", container: container)
+                return AnyView(
+                    NavigationStack {
                         MyBankAccountView()
-                      }
+                            .environmentObject(txService)
+                            .environmentObject(BankAccountsService())
+                            .environmentObject(CategoriesService())
+                            .environmentObject(NetworkUIUtil())
+                            .modelContainer(container)
                     }
+                )
+            } catch {
+                return AnyView(
+                    Text("Failed to create preview: \(error.localizedDescription)")
+                )
+            }
+        }
+    }
+}
