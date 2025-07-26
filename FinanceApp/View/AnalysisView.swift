@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PieChart
 
 struct AnalysisViewControllerPreview: UIViewControllerRepresentable {
     let direction: Direction
@@ -86,6 +87,8 @@ class AnalysisViewController: UIViewController {
     }()
     private var tableHeightConstraint: NSLayoutConstraint!
     
+    private let pieChartView = PieChartView()
+    
     // MARK: Data & VM
     private var transactions: [Transaction] = []
     private let viewModel: HistoryViewModel
@@ -140,23 +143,23 @@ class AnalysisViewController: UIViewController {
         view.addSubview(analizLabel)
         analizLabel.pinTop(to: view.safeAreaLayoutGuide.topAnchor, 36)
         analizLabel.pinLeft(to: view, 16)
-        
+
         headerContainer.backgroundColor = .white
         headerContainer.layer.cornerRadius = 10
         view.addSubview(headerContainer)
         headerContainer.pinLeft(to: view, 16)
         headerContainer.pinRight(to: view, 16)
         headerContainer.pinTop(to: analizLabel.bottomAnchor, 26)
-        
+
         let startRow = makeRow(labelText: "Начало", accessory: startPicker)
         let endRow = makeRow(labelText: "Конец", accessory: endPicker)
         let sortRow = makeRow(labelText: "Сортировка", accessory: sortControl)
         let sumRow = makeRow(labelText: "Сумма", accessory: sumLabel)
-        
+
         let divider1 = makeDivider()
         let divider2 = makeDivider()
         let divider3 = makeDivider()
-        
+
         let headerStack = UIStackView(arrangedSubviews: [
             startRow, divider1, endRow, divider2, sortRow, divider3, sumRow
         ])
@@ -164,11 +167,20 @@ class AnalysisViewController: UIViewController {
         headerStack.spacing = 7
         headerContainer.addSubview(headerStack)
         headerStack.pin(to: headerContainer, 16)
-        
+
+        view.addSubview(pieChartView)
+        pieChartView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            pieChartView.topAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: 16),
+            pieChartView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            pieChartView.widthAnchor.constraint(equalToConstant: 200),
+            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor)
+        ])
+
         view.addSubview(opsTitleLabel)
         opsTitleLabel.pinLeft(to: view, 16)
-        opsTitleLabel.pinTop(to: headerContainer.bottomAnchor, 63)
-        
+        opsTitleLabel.pinTop(to: pieChartView.bottomAnchor, 28)
+
         view.addSubview(tableView)
         tableView.pinLeft(to: view, 16)
         tableView.pinRight(to: view, 16)
@@ -242,8 +254,21 @@ class AnalysisViewController: UIViewController {
                 UIView.animate(withDuration: 0.25) {
                     self.view.layoutIfNeeded()
                 }
+
+                // Обновление графика
+                let groupedTransactions = Dictionary(grouping: transactions, by: { $0.category.name })
+                let entities = groupedTransactions.map { categoryName, transactions in
+                    Entity(value: transactions.reduce(0) { $0 + $1.amount }, label: categoryName)
+                }.sorted { $0.value > $1.value } // Sort by value for better visualization
+
+                var topEntities = Array(entities.prefix(5))
+                let remainingValue = entities.dropFirst(5).reduce(0) { $0 + $1.value }
+                if remainingValue > 0 {
+                    topEntities.append(Entity(value: remainingValue, label: "Остальные"))
+                }
+                pieChartView.entities = topEntities
             } catch {
-                // Error handling is managed by NetworkUIUtil
+                // Error handling
             }
         }
     }

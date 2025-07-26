@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EFE8AC462E33D111005E09B0 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = EFE8AC452E33D111005E09B0 /* PieChart */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		EF600B612DFC8842005E6DE0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -19,6 +23,7 @@
 /* Begin PBXFileReference section */
 		EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinanceApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EFE8AC2C2E33C80B005E09B0 /* Utilities.instrdst */ = {isa = PBXFileReference; explicitFileType = com.apple.instruments.instrdst; includeInIndex = 0; path = Utilities.instrdst; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,11 @@
 			path = FinanceAppTests;
 			sourceTree = "<group>";
 		};
+		EFE8AC2D2E33C80B005E09B0 /* Utilities */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Utilities;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EFE8AC462E33D111005E09B0 /* PieChart in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,6 +68,7 @@
 			children = (
 				EF600ACC2DFB3D6F005E6DE0 /* FinanceApp */,
 				EF600B5E2DFC8842005E6DE0 /* FinanceAppTests */,
+				EFE8AC2D2E33C80B005E09B0 /* Utilities */,
 				EF600ACB2DFB3D6F005E6DE0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -66,6 +78,7 @@
 			children = (
 				EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */,
 				EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */,
+				EFE8AC2C2E33C80B005E09B0 /* Utilities.instrdst */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,6 +103,7 @@
 			);
 			name = FinanceApp;
 			packageProductDependencies = (
+				EFE8AC452E33D111005E09B0 /* PieChart */,
 			);
 			productName = FinanceApp;
 			productReference = EF600ACA2DFB3D6F005E6DE0 /* FinanceApp.app */;
@@ -118,6 +132,26 @@
 			productReference = EF600B5D2DFC8842005E6DE0 /* FinanceAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		EFE8AC2B2E33C80B005E09B0 /* Utilities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EFE8AC322E33C80B005E09B0 /* Build configuration list for PBXNativeTarget "Utilities" */;
+			buildPhases = (
+				EFE8AC2A2E33C80B005E09B0 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				EFE8AC2D2E33C80B005E09B0 /* Utilities */,
+			);
+			name = Utilities;
+			packageProductDependencies = (
+			);
+			productName = Utilities;
+			productReference = EFE8AC2C2E33C80B005E09B0 /* Utilities.instrdst */;
+			productType = "com.apple.product-type.instruments-package";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -135,6 +169,9 @@
 						CreatedOnToolsVersion = 16.2;
 						TestTargetID = EF600AC92DFB3D6F005E6DE0;
 					};
+					EFE8AC2B2E33C80B005E09B0 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 				};
 			};
 			buildConfigurationList = EF600AC52DFB3D6F005E6DE0 /* Build configuration list for PBXProject "FinanceApp" */;
@@ -146,6 +183,9 @@
 			);
 			mainGroup = EF600AC12DFB3D6F005E6DE0;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EFE8AC442E33CE63005E09B0 /* XCLocalSwiftPackageReference "Utilities" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EF600ACB2DFB3D6F005E6DE0 /* Products */;
 			projectDirPath = "";
@@ -153,6 +193,7 @@
 			targets = (
 				EF600AC92DFB3D6F005E6DE0 /* FinanceApp */,
 				EF600B5C2DFC8842005E6DE0 /* FinanceAppTests */,
+				EFE8AC2B2E33C80B005E09B0 /* Utilities */,
 			);
 		};
 /* End PBXProject section */
@@ -183,6 +224,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		EF600B592DFC8842005E6DE0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFE8AC2A2E33C80B005E09B0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -411,6 +459,30 @@
 			};
 			name = Release;
 		};
+		EFE8AC302E33C80B005E09B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N394S3993B;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Instruments/Packages";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				VERSIONING_SYSTEM = "";
+			};
+			name = Debug;
+		};
+		EFE8AC312E33C80B005E09B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N394S3993B;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Instruments/Packages";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				VERSIONING_SYSTEM = "";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -441,7 +513,30 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		EFE8AC322E33C80B005E09B0 /* Build configuration list for PBXNativeTarget "Utilities" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFE8AC302E33C80B005E09B0 /* Debug */,
+				EFE8AC312E33C80B005E09B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		EFE8AC442E33CE63005E09B0 /* XCLocalSwiftPackageReference "Utilities" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Utilities;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EFE8AC452E33D111005E09B0 /* PieChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PieChart;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EF600AC22DFB3D6F005E6DE0 /* Project object */;
 }
