@@ -4,28 +4,15 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>FinanceApp.xcscheme_^#shared#^_</key>
+		<key>PieChart.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>2</integer>
 		</dict>
 		<key>Utilities.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>1</integer>
-		</dict>
-	</dict>
-	<key>SuppressBuildableAutocreation</key>
-	<dict>
-		<key>EF600AC92DFB3D6F005E6DE0</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>EF600B5C2DFC8842005E6DE0</key>
-		<dict>
-			<key>primary</key>
-			<true/>
+			<integer>0</integer>
 		</dict>
 	</dict>
 </dict>
